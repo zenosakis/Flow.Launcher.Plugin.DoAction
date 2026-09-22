@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DoAction.Core/DoAction.Core.csproj" />
+    <PackageReference Include="Flow.Launcher.Plugin" Version="4.7.0" ExcludeAssets="runtime" />
+    <None Update="plugin.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Images/doaction.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
