@@ -13,7 +13,7 @@ public sealed class PowerSchedule
 
     public void Arm(Settings settings, DateTimeOffset now)
     {
-        if (Active is not null) throw new InvalidOperationException("기존 예약을 먼저 취소해 주세요.");
+        if (Active is not null) throw new InvalidOperationException(L.T("Cancel the existing schedule first.", "기존 예약을 먼저 취소해 주세요."));
         Active = new(settings.Power, settings.ForceClose, settings.ResolveDue(now), settings.WarningSeconds);
         lastTick = now;
         warned = false;

@@ -1,84 +1,80 @@
 # Flow.Launcher.Plugin.DoAction
 
-DoAction3의 자동 입력과 PC 종료 예약을 두 개의 독립 기능으로 제공하는 Windows용 플러그인입니다.
+A Windows plugin for Flow Launcher that provides two independent features: mouse/keyboard automation and scheduled PC shutdown or restart.
 
-[릴리스 다운로드](https://github.com/zenosakis/Flow.Launcher.Plugin.DoAction/releases) · [빌드 상태](https://github.com/zenosakis/Flow.Launcher.Plugin.DoAction/actions) · [배포·스토어 등록 안내](docs/publishing.md)
+[Releases](https://github.com/zenosakis/Flow.Launcher.Plugin.DoAction/releases) · [Builds](https://github.com/zenosakis/Flow.Launcher.Plugin.DoAction/actions) · [Publishing guide](docs/publishing.md)
 
-## 설치와 시작
+## Language
 
-1. `Flow.Launcher.Plugin.DoAction-1.0.0.zip`을 압축 해제합니다.
-2. 압축 해제한 폴더의 `Install.ps1`을 PowerShell에서 실행합니다. 기본 설치 위치는 `%APPDATA%\FlowLauncher\Plugins\Flow.Launcher.Plugin.DoAction-1.0.0`입니다.
-3. Flow Launcher를 다시 시작하고 `da`를 입력합니다.
-4. **DoAction 설정**에서 옵션을 저장한 후 **자동 입력 시작** 또는 **PC 종료/재부팅 예약**을 선택합니다.
+The interface follows Flow Launcher's language setting. Korean is supported; English is used for all other languages. Menus, settings, validation messages, fullscreen instructions, and power notifications are translated. Reopen the settings panel after changing languages. Dates use PC local time; scheduled times are shown in an explicit year-month-day and 24-hour format.
 
-Flow의 설정 → 플러그인 → DoAction에서도 같은 설정 화면을 제공합니다. 설치·Flow 재시작만으로 자동 입력이나 PC 예약이 실행되지는 않습니다.
+## Installation
 
-포터블 Flow는 `Install.ps1 -PluginRoot '포터블 Flow의 UserData\Plugins'`로 실제 플러그인 경로를 지정하세요.
+Download and extract the latest release ZIP. Close Flow Launcher, run the included `Install.ps1`, and restart Flow. Alternatively, install the release ZIP through Flow's plugin manager using `pm install <ZIP URL>`.
 
-## 자동 입력
+The default installation directory is `%APPDATA%\FlowLauncher\Plugins\Flow.Launcher.Plugin.DoAction-<version>`. For portable installations, pass `Install.ps1 -PluginRoot '<portable Flow>\UserData\Plugins'`.
 
-- 마우스 이동 / 클릭 / 이동 → 클릭 / 키보드 / 이동 → 키보드 / 이동 → 클릭 → 키보드
-- 반복 간격 0.1~86400초, 시작 대기 1~60초
-- 이동 방향·거리, 왼쪽/오른쪽/더블 클릭
-- 무작위 영문·숫자, 최대 500자 문자열, Space/Enter/Tab/F15
-- 전체화면 옵션: 모든 모니터를 덮고 주 모니터의 전용 입력 영역에서 동작
+Type `da`, open **DoAction settings**, save your preferences, then choose **Start automation** or a power scheduling action. Saving settings or restarting Flow never starts either feature automatically.
 
-**실제 키보드의 아무 키나 누르면 이동·클릭·키보드 입력을 모두 종료하고 전체화면을 닫습니다. 자동 재개하지 않습니다.** 다시 `da` → 자동 입력 시작을 선택해야 합니다. 시작에 사용한 Enter 등 이미 눌린 키는 떼기를 기다린 후 대기 시간을 계산합니다. 시작 준비 중 새 키를 누르면 시작도 취소됩니다.
+## Automation
 
-자동 생성된 키 입력은 정지 신호로 처리하지 않습니다. 중지 시 이미 전달된 문자·클릭을 취소할 수는 없으며, 다음 입력 전마다 취소를 확인합니다. 문자열은 짧게 나누어 전송하고 키 누름·뗌은 한 쌍으로 전송합니다.
+- Move, click, move then click, type, move then type, or move then click then type.
+- Repeat every 0.1–86400 seconds, with a 1–60 second start delay.
+- Configurable movement direction and distance; left, right, or double clicks.
+- Type random letters/digits, custom text up to 500 characters, or Space/Enter/Tab/F15.
+- Optional fullscreen surfaces on every monitor; input goes to the primary monitor's dedicated area.
 
-전체화면을 끄면 **현재 활성 창에 입력**합니다. 대상 앱은 직접 선택하세요. Flow 창으로 돌아오거나 전체화면에서 다른 앱으로 전환하면 자동 동작이 종료됩니다. 화면 잠금·절전 시에도 중지합니다. `da` → 자동 입력 중지에서도 종료할 수 있습니다.
+**Press any physical keyboard key to stop all automation and close fullscreen.** Automation never resumes automatically. Keys held when starting must be released first. New physical input during preparation cancels the start. Injected keyboard events do not count as physical input. If keyboard monitoring fails, automation does not start.
 
-일반 권한의 Flow에서 관리자 권한 앱으로의 입력은 Windows 정책에 의해 차단될 수 있습니다. UAC 보안 화면이나 잠금 화면은 자동화 대상이 아닙니다. 다른 프로그램이 주입한 키 입력 역시 실제 키 입력으로 간주하지 않습니다. 키보드 감시 등록에 실패하면 자동 입력을 시작하지 않습니다.
+Without fullscreen, input goes to the active window. Switching to Flow or leaving the fullscreen target stops automation. Locking the session or sleeping also stops automation. You can stop from the `da` menu. The plugin creates no tray icon.
 
-## PC 종료·재부팅 예약
+Cancellation cannot undo characters or clicks already delivered. Text is sent in short steps with cancellation checks. Windows may block input from a normal-permission Flow process into an elevated application. Secure UAC and lock screens are not supported targets.
 
-- PC 종료 또는 재부팅 중 하나를 선택합니다.
-- 몇 분 후(1~10080분) 또는 현지 날짜·시각을 지정합니다.
-- **예약 메뉴를 선택해야 활성화**됩니다. 설정 저장만으로 예약하지 않습니다.
-- 등록 직후 안내에 작업 종류, 정확한 실행 시각(PC 현지 시각), 실행 전 안내 시간, 강제 종료 여부와 취소 방법을 표시합니다. `da`의 **상태** 항목에서 다시 볼 수 있습니다. 설정을 바꿔도 안내는 실제 등록된 예약 기준입니다.
-- 동시에 한 개의 예약만 유지합니다. 예약 후 설정을 바꿔도 기존 예약 시각·작업은 유지됩니다.
-- 실행 전 10~300초 안내(기본 60초). 예약 시간은 안내 시간보다 길어야 합니다.
-- 안내 전에 자동 입력을 종료하고, 안내 창에서 취소할 수 있습니다. 창의 X도 예약 취소입니다.
-- 강제 종료 기본 꺼짐. 저장하지 않은 앱이 있으면 Windows가 종료를 막을 수 있습니다.
-- 강제 종료를 켜면 저장하지 않은 내용을 잃을 수 있습니다.
+## Power schedules
 
-**자동 입력 중지와 예약 취소는 독립적입니다.** 실제 키를 눌러 자동 입력을 중지해도 PC 예약은 유지됩니다. `da` → PC 예약 취소로 예약을 취소하세요. Windows에 실제 종료 요청이 전달된 이후에는 플러그인에서 취소할 수 없습니다.
+Choose shutdown or restart, then either a delay of 1–10080 minutes or a local date and time. Activate the schedule explicitly from `da`; saving settings does not activate it. Only one schedule can be active. Changing settings does not change an active schedule.
 
-Flow가 실행 중인 동안만 유지되는 1회 예약이며, Flow 종료·절전 시 취소됩니다. 다시 실행해도 복구하지 않습니다. 10초를 초과하는 실행 공백이나 큰 시계 변경이 감지되면 갑작스러운 종료를 피하기 위해 예약을 만료 처리합니다. 화면 잠금만으로 PC 예약을 취소하지는 않습니다.
+Registration displays the action, exact local execution time, warning period, force-close setting, and cancellation instructions. Select **Status** in `da` to view the active schedule again. The result list refreshes when the schedule changes.
 
-카운트다운은 플러그인 내부에서 처리합니다. 실제 명령은 `shutdown.exe /s /t 0` 또는 `/r /t 0`이며, 강제 종료를 직접 켠 경우에만 `/f`를 추가합니다. 다른 앱이나 Windows가 만든 종료 예약은 취소하지 않습니다.
+A cancelable warning appears 10–300 seconds before execution (60 seconds by default). Automation stops before the warning. Closing the warning window cancels the schedule. Force close is off by default; applications with unsaved work may prevent shutdown. Enabling force close can discard unsaved work.
 
-## 개발·검증
+**Stopping automation does not cancel a power schedule.** Use `da` → **Cancel power schedule**. Once the actual power request reaches Windows, the plugin cannot cancel it.
 
-- .NET 8 SDK, Windows, WPF
-- Flow Launcher 2.1.4의 설치된 API 어셈블리에 대한 인터페이스 로드 호환성 확인
-- `Flow.Launcher.Plugin` 4.7.0을 컴파일 참조로 사용하고, 실행 시 Flow가 제공하는 API를 사용합니다. API DLL을 배포물에 포함하지 않습니다.
+Schedules are one-time, session-only actions. Exiting Flow or sleeping cancels them; they are never restored automatically. Execution gaps longer than 10 seconds or significant clock changes expire the schedule. Session locking alone does not cancel it.
+
+The plugin manages the countdown internally and sends `shutdown.exe /s /t 0` or `/r /t 0` only at execution. `/f` is added only when explicitly enabled. It does not cancel shutdown requests created by other programs.
+
+## Development and verification
+
+Requires Windows and .NET 8 SDK. Tested with Flow Launcher 2.1.4. `Flow.Launcher.Plugin` 4.7.0 is a compile-time reference; the host provides the runtime API assembly.
 
 ```powershell
-.\scripts\Build.ps1
-dotnet run --project tests/DoAction.Tests -c Release -- artifacts/qa
+./scripts/Build.ps1
 ```
 
-테스트는 실제 키·클릭·PC 종료를 실행하지 않습니다. 입력 판별, 취소, 예약 만료·시각 검증, 강제 종료 명령 구성, WPF 설정 화면 렌더링을 검증합니다. 실제 앱 입력·다중 모니터 동작·최종 PC 종료는 사용 환경에서 별도 확인이 필요합니다.
+Automated checks cover input filtering, cancellation, schedule expiry, power arguments, Flow integration, language selection, and offscreen WPF rendering. They never execute actual input or PC power operations. Packages and verification images are written under `artifacts/`.
 
-실제 전체화면 입력 회귀 검증은 `dotnet run --project tests/DoAction.Tests -c Release -- --live`로 별도 실행합니다. 약 4초 동안 테스트 전용 전체화면에만 문자를 입력하고 클릭한 뒤 자동으로 닫습니다. PC 전원 작업은 실행하지 않습니다.
+For an explicit live automation check, run:
 
-2026-09-22 수정: Flow 2.x의 비동기 검색창 숨김이 완료된 뒤 자동 입력을 시작하도록 변경하고 중복 숨김 요청을 제거했습니다. 입력 종료 후 창 정리는 UI 스레드에서 수행하며, 상태 변경은 Flow 로그에 기록합니다.
+```powershell
+dotnet run --project tests/DoAction.Tests -c Release -- --live
+```
 
-산출물: `artifacts/Flow.Launcher.Plugin.DoAction-1.0.0.zip`, `artifacts/qa/` 설정 화면 이미지.
+This types and clicks only inside a temporary test fullscreen for approximately four seconds. It does not execute power actions. Real application, multi-monitor, and final shutdown behavior require separate environment testing.
 
-## 구조
+## Structure and contribution
 
-- `src/DoAction.Core`: 설정 검증, 실제 키 판별, 예약 상태
-- `src/Flow.Launcher.Plugin.DoAction`: Flow 연동, WPF 설정·전체화면, 입력 감시·전송, 예약 안내
-- `tests/DoAction.Tests`: 실제 PC 동작을 보내지 않는 검증 실행기
-- `scripts`: 빌드·패키징·로컬 설치
+- `src/DoAction.Core`: settings validation, physical-key policy, power schedule state, language selection.
+- `src/Flow.Launcher.Plugin.DoAction`: Flow integration, settings, fullscreen, native input, and power warnings.
+- `tests/DoAction.Tests`: executable regression checks.
+- `scripts`: build, packaging, icon export, and local installation.
 
-## 참고
+Write documentation, code comments, commit messages, and PR descriptions in English. Keep user-facing messages translated and preserve existing plugin IDs and settings compatibility.
 
-- [Flow 플러그인 개발](https://www.flowlauncher.com/docs/#/plugin-dev)
-- [Windows 키보드 이벤트](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-kbdllhookstruct)
-- [Windows shutdown 명령](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/shutdown)
+## Icon and references
 
-아이콘은 새로 생성한 커서·반복 화살표 디자인입니다. PNG 원본과 16~256px ICO를 `src/Flow.Launcher.Plugin.DoAction/Images`에 보관합니다. 생성 프롬프트는 [docs/icon-generation.md](docs/icon-generation.md)를 참고하세요. ICO 재생성: `./scripts/Export-Icon.ps1`.
+The original cursor-and-repeat-arrow icon was generated without reference images. PNG and multi-resolution ICO assets are in `src/Flow.Launcher.Plugin.DoAction/Images`. See [generation details](docs/icon-generation.md). Regenerate the ICO with `./scripts/Export-Icon.ps1`.
+
+- [Flow plugin development](https://www.flowlauncher.com/docs/#/plugin-dev)
+- [Windows keyboard events](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-kbdllhookstruct)
+- [Windows shutdown command](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/shutdown)

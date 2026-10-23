@@ -1,3 +1,4 @@
+using DoAction.Core;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,7 +20,7 @@ internal sealed class FullScreenWindow : Window
 
     public FullScreenWindow(System.Drawing.Rectangle bounds, bool primary, Action stop)
     {
-        Title = "DoAction · 자동 입력";
+        Title = L.T("DoAction · Automation", "DoAction · 자동 입력");
         WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = primary;
@@ -31,8 +32,8 @@ internal sealed class FullScreenWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition());
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.Children.Add(Ui.Text("DoAction 실행 중", 28));
-        var hint = Ui.Text("실제 키보드에서 아무 키나 누르면 완전히 중지합니다. PC 예약은 유지됩니다.");
+        grid.Children.Add(Ui.Text(L.T("DoAction is running", "DoAction 실행 중"), 28));
+        var hint = Ui.Text(L.T("Press any physical key to stop automation completely. Power schedules remain active.", "실제 키보드에서 아무 키나 누르면 완전히 중지합니다. PC 예약은 유지됩니다."));
         Grid.SetRow(hint, 1);
         grid.Children.Add(hint);
         input = new TextBox
@@ -41,12 +42,12 @@ internal sealed class FullScreenWindow : Window
             VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, Padding = new Thickness(20),
             FontSize = 20, ContextMenu = new ContextMenu(), IsUndoEnabled = false
         };
-        System.Windows.Automation.AutomationProperties.SetName(input, "자동 입력 전용 영역");
+        System.Windows.Automation.AutomationProperties.SetName(input, L.T("Dedicated automation input area", "자동 입력 전용 영역"));
         ContextMenuService.SetIsEnabled(input, false);
         input.TextChanged += (_, _) => { if (input.Text.Length > 2000) input.Clear(); };
         Grid.SetRow(input, 2);
         grid.Children.Add(input);
-        var button = Ui.Button("자동 동작 중지", (_, _) => stop());
+        var button = Ui.Button(L.T("Stop automation", "자동 동작 중지"), (_, _) => stop());
         button.HorizontalAlignment = HorizontalAlignment.Left;
         Grid.SetRow(button, 3);
         grid.Children.Add(button);

@@ -15,10 +15,10 @@ internal sealed class Controller : IDisposable
     public Settings Settings { get; }
     public AutomationRunner Automation { get; } = new();
     public PowerSchedule Schedule { get; } = new();
-    public string Status => $"자동 입력 {(Automation.IsRunning ? "켜짐" : "꺼짐")} · " +
+    public string Status => L.T($"Automation {(Automation.IsRunning ? "On" : "Off")} · ", $"자동 입력 {(Automation.IsRunning ? "켜짐" : "꺼짐")} · ") +
         (Schedule.Active is { } active
-            ? $"PC {PowerName(active.Power)} 예약: {active.Due.LocalDateTime:yyyy-MM-dd HH:mm:ss}"
-            : powerExecuting ? "PC 전원 작업 요청 중" : "PC 예약 없음");
+            ? L.T($"PC {PowerName(active.Power)} scheduled: {active.Due.LocalDateTime:yyyy-MM-dd HH:mm:ss}", $"PC {PowerName(active.Power)} 예약: {active.Due.LocalDateTime:yyyy-MM-dd HH:mm:ss}")
+            : powerExecuting ? L.T("Power request in progress", "PC 전원 작업 요청 중") : L.T("No power schedule", "PC 예약 없음"));
     public string LastEvent { get; private set; } = "";
     public event Action? Changed;
     private readonly Dispatcher ui;
@@ -33,7 +33,7 @@ internal sealed class Controller : IDisposable
         Settings = settings;
         this.notify = notify;
         ui = Application.Current.Dispatcher;
-        Automation.Activated += () => ui.BeginInvoke(() => Update("자동 입력 실행 중 · 실제 키를 누르면 중지"));
+        Automation.Activated += () => ui.BeginInvoke(() => Update(L.T("Automation running · press any physical key to stop", "자동 입력 실행 중 · 실제 키를 누르면 중지")));
         Automation.Finished += reason =>
         {
             if (!ui.HasShutdownStarted)
@@ -47,7 +47,7 @@ internal sealed class Controller : IDisposable
     public void StartAutomation()
     {
         if (disposed || Automation.IsRunning) return;
-        if (warning != null || powerExecuting) throw new InvalidOperationException("PC 종료 안내 중에는 자동 입력을 시작할 수 없습니다.");
+        if (warning != null || powerExecuting) throw new InvalidOperationException(L.T("Automation cannot start during the power warning.", "PC 종료 안내 중에는 자동 입력을 시작할 수 없습니다."));
         if (Settings.ValidateAutomation() is { } error) throw new ArgumentException(error);
         CloseScreens();
         var settings = Settings.Snapshot();
@@ -72,30 +72,30 @@ internal sealed class Controller : IDisposable
             Native.GetWindowThreadProcessId(foreground, out var pid);
             return pid != (uint)Environment.ProcessId;
         }, () => target == null ? null : ui.Invoke(target.GetInputArea));
-        Update($"시작 준비 · 키를 뗀 뒤 {settings.StartDelaySeconds}초 후 실행");
+        Update(L.T($"Preparing · release held keys; starting in {settings.StartDelaySeconds} seconds", $"시작 준비 · 키를 뗀 뒤 {settings.StartDelaySeconds}초 후 실행"));
     }
 
-    public void StopAutomation(string reason = "자동 입력 중지 · PC 예약은 유지됩니다.")
+    public void StopAutomation(string? reason = null)
     { Automation.Stop(reason); if (!Automation.IsRunning) CloseScreens(); }
 
     public void ArmPower()
     {
         if (disposed || powerExecuting) return;
         Schedule.Arm(Settings.Snapshot(), DateTimeOffset.Now);
-        Update($"{Schedule.Active!.Due.LocalDateTime:MM-dd HH:mm:ss} PC {PowerName(Schedule.Active.Power)} 예약됨");
+        Update(L.T($"{Schedule.Active!.Due.LocalDateTime:MM-dd HH:mm:ss} PC {PowerName(Schedule.Active.Power)} scheduled", $"{Schedule.Active!.Due.LocalDateTime:MM-dd HH:mm:ss} PC {PowerName(Schedule.Active.Power)} 예약됨"));
         ShowPowerStatus();
     }
 
     public void ShowPowerStatus()
     {
         var active = Schedule.Active;
-        notify(active == null ? "등록된 PC 예약이 없습니다." :
-            $"PC {PowerName(active.Power)} 예약이 등록되어 있습니다.\n" +
-            $"실행 시각: {active.Due.LocalDateTime:yyyy-MM-dd HH:mm:ss} (PC 현지 시각)\n" +
-            $"실행 전 안내: {active.WarningSeconds}초 전\n" +
-            $"강제 종료: {(active.ForceClose ? "켜짐 · 저장하지 않은 내용이 사라질 수 있습니다." : "꺼짐")}\n\n" +
-            "취소: da → PC 예약 취소\n" +
-            "Flow 종료·절전 시 예약이 취소됩니다.");
+        notify(active == null ? L.T("No power schedule is active.", "등록된 PC 예약이 없습니다.") :
+            L.T($"PC {PowerName(active.Power)} schedule is active.\n", $"PC {PowerName(active.Power)} 예약이 등록되어 있습니다.\n") +
+            L.T($"Execution time: {active.Due.LocalDateTime:yyyy-MM-dd HH:mm:ss} (PC local time)\n", $"실행 시각: {active.Due.LocalDateTime:yyyy-MM-dd HH:mm:ss} (PC 현지 시각)\n") +
+            L.T($"Warning: {active.WarningSeconds} seconds before execution\n", $"실행 전 안내: {active.WarningSeconds}초 전\n") +
+            L.T($"Force close: {(active.ForceClose ? "On · unsaved work may be lost." : "Off")}\n\n", $"강제 종료: {(active.ForceClose ? "켜짐 · 저장하지 않은 내용이 사라질 수 있습니다." : "꺼짐")}\n\n") +
+            L.T("Cancel: da → Cancel power schedule\n", "취소: da → PC 예약 취소\n") +
+            L.T("The schedule is canceled when Flow exits or the PC sleeps.", "Flow 종료·절전 시 예약이 취소됩니다."));
     }
 
     public void CancelPower()
@@ -105,10 +105,10 @@ internal sealed class Controller : IDisposable
         warning = null;
         // When invoked by the window's Closing handler, do not recursively Close it.
         if (old != null) ui.BeginInvoke(old.Dismiss);
-        Update("PC 예약 취소 · 자동 입력 상태는 유지됩니다.");
+        Update(L.T("Power schedule canceled · automation is unchanged.", "PC 예약 취소 · 자동 입력 상태는 유지됩니다."));
     }
 
-    public static string PowerName(PowerKind kind) => kind == PowerKind.Shutdown ? "종료" : "재부팅";
+    public static string PowerName(PowerKind kind) => kind == PowerKind.Shutdown ? L.T("shutdown", "종료") : L.T("restart", "재부팅");
 
     private async void Tick(object? sender, EventArgs e)
     {
@@ -118,7 +118,7 @@ internal sealed class Controller : IDisposable
         catch (Exception ex)
         {
             CancelPower();
-            Update("예약 처리 오류: " + ex.Message);
+            Update(L.T("Schedule error: ", "예약 처리 오류: ") + ex.Message);
             notify(LastEvent);
         }
         finally { ticking = false; }
@@ -130,7 +130,7 @@ internal sealed class Controller : IDisposable
         var change = Schedule.Tick(DateTimeOffset.Now);
         if (change == ScheduleEvent.Warning && reservation != null)
         {
-            StopAutomation("PC 예약 실행 안내를 위해 자동 입력을 종료했습니다.");
+            StopAutomation(L.T("Automation stopped for the power warning.", "PC 예약 실행 안내를 위해 자동 입력을 종료했습니다."));
             await Automation.Completion;
             if (disposed || Schedule.Active != reservation) return;
             warning = new PowerWarningWindow(reservation, CancelPower);
@@ -139,7 +139,7 @@ internal sealed class Controller : IDisposable
         else if (change == ScheduleEvent.Expired)
         {
             CancelPower();
-            Update("절전 또는 시간 변경으로 PC 예약이 만료되었습니다.");
+            Update(L.T("Power schedule expired due to sleep or a clock change.", "절전 또는 시간 변경으로 PC 예약이 만료되었습니다."));
             notify(LastEvent);
         }
         else if (change == ScheduleEvent.Execute && reservation != null)
@@ -147,8 +147,8 @@ internal sealed class Controller : IDisposable
             powerExecuting = true;
             warning?.Dismiss();
             warning = null;
-            Update("PC " + PowerName(reservation.Power) + " 요청 중");
-            try { await PowerExecutor.Execute(reservation); Update("PC " + PowerName(reservation.Power) + " 요청을 전달했습니다."); }
+            Update("PC " + PowerName(reservation.Power) + L.T(" request in progress", " 요청 중"));
+            try { await PowerExecutor.Execute(reservation); Update("PC " + PowerName(reservation.Power) + L.T(" request sent.", " 요청을 전달했습니다.")); }
             catch (Exception ex) { Update(ex.Message); notify(ex.Message); }
             finally { powerExecuting = false; }
         }
@@ -158,13 +158,13 @@ internal sealed class Controller : IDisposable
     private void PowerChanged(object sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode is PowerModes.Suspend or PowerModes.Resume)
-            ui.BeginInvoke(() => { StopAutomation("절전으로 자동 입력 중지"); if (Schedule.Active != null) { CancelPower(); Update("절전으로 PC 예약이 취소되었습니다."); } });
+            ui.BeginInvoke(() => { StopAutomation(L.T("Automation stopped due to sleep.", "절전으로 자동 입력 중지")); if (Schedule.Active != null) { CancelPower(); Update(L.T("Power schedule canceled due to sleep.", "절전으로 PC 예약이 취소되었습니다.")); } });
     }
 
     private void SessionChanged(object sender, SessionSwitchEventArgs e)
     {
         if (e.Reason is SessionSwitchReason.SessionLock or SessionSwitchReason.SessionLogoff)
-            ui.BeginInvoke(() => StopAutomation("화면 잠금으로 자동 입력을 종료했습니다."));
+            ui.BeginInvoke(() => StopAutomation(L.T("Automation stopped because the session was locked.", "화면 잠금으로 자동 입력을 종료했습니다.")));
     }
 
     private void CloseScreens()

@@ -18,6 +18,7 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        L.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("ko-KR"));
         if (args.Contains("--diagnose")) { Diagnose(); return; }
         if (args.Contains("--live")) { Live(); return; }
         Check("all six action combinations", () =>
@@ -231,6 +232,23 @@ internal static class Program
             Assert(main.CreateSettingPanel() is SettingsPanel);
             typeof(Flow.Launcher.Plugin.Query).GetProperty("Search")!.SetValue(query, "settings");
             Equal(main.Query(query).Single().Title, "DoAction 설정");
+            main.OnCultureInfoChanged(System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+            Equal(main.Query(query).Single().Title, "DoAction settings");
+            typeof(Flow.Launcher.Plugin.Query).GetProperty("Search")!.SetValue(query, "");
+            Assert(main.Query(query).Any(r => r.Title == "Start automation"));
+            string notification = "";
+            using (var english = new Controller(new Settings(), text => notification = text))
+            {
+                english.ArmPower();
+                Assert(notification.Contains("Execution time:"));
+                Assert(!notification.Any(c => c >= '\uAC00' && c <= '\uD7A3'));
+                english.CancelPower();
+            }
+            Assert(new Settings { IntervalSeconds = 0 }.ValidateAutomation()!.Contains("Interval"));
+            main.OnCultureInfoChanged(System.Globalization.CultureInfo.GetCultureInfo("fr-FR"));
+            Assert(main.Query(query).Any(r => r.Title == "Start automation"));
+            main.OnCultureInfoChanged(System.Globalization.CultureInfo.GetCultureInfo("ko-KR"));
+            Assert(main.Query(query).Any(r => r.Title == "자동 입력 시작"));
         });
         Check("settings render at narrow width and all modes", () =>
         {
@@ -250,6 +268,12 @@ internal static class Program
             powerPanel.Measure(new Size(660, 1000)); powerPanel.Arrange(new Rect(0, 0, 660, 1000)); powerPanel.UpdateLayout();
             ((ScrollViewer)powerPanel.Content).ScrollToEnd();
             Render(powerPanel, 660, 1000, Path.Combine(args[0], "settings-power.png"));
+            L.SetCulture(System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+            Render(new SettingsPanel(settings, () => { }), 660, 1000, Path.Combine(args[0], "settings-input-en.png"));
+            var englishPower = new SettingsPanel(settings, () => { });
+            englishPower.Measure(new Size(660, 1000)); englishPower.Arrange(new Rect(0, 0, 660, 1000)); englishPower.UpdateLayout();
+            ((ScrollViewer)englishPower.Content).ScrollToEnd();
+            Render(englishPower, 660, 1000, Path.Combine(args[0], "settings-power-en.png"));
         }
         Console.WriteLine($"PASS: {passed} checks. No real input or PC power action executed.");
         app.Shutdown();

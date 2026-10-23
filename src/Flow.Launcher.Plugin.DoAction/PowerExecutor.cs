@@ -17,11 +17,11 @@ internal static class PowerExecutor
             FileName = Path.Combine(Environment.SystemDirectory, "shutdown.exe"),
             Arguments = Arguments(reservation), UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardError = true, RedirectStandardOutput = true
-        }) ?? throw new InvalidOperationException("종료 요청을 실행하지 못했습니다.");
+        }) ?? throw new InvalidOperationException(L.T("Unable to execute the power request.", "종료 요청을 실행하지 못했습니다."));
         var error = process.StandardError.ReadToEndAsync();
         var output = process.StandardOutput.ReadToEndAsync();
         await process.WaitForExitAsync();
         if (process.ExitCode != 0)
-            throw new InvalidOperationException($"종료 요청 실패 ({process.ExitCode}): {await error} {await output}");
+            throw new InvalidOperationException(L.T($"Power request failed ({process.ExitCode}): {await error} {await output}", $"종료 요청 실패 ({process.ExitCode}): {await error} {await output}"));
     }
 }

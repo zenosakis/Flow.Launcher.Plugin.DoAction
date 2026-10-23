@@ -46,7 +46,7 @@ internal sealed class PhysicalKeyboardMonitor : IDisposable
             gate = new PhysicalKeyGate(held);
             released = gate.InitialKeysReleased;
             hook = Native.SetWindowsHookEx(13, callback, Native.GetModuleHandle(null), 0);
-            if (hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(), "키보드 중지 감시를 시작하지 못했습니다.");
+            if (hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(), L.T("Unable to monitor the physical keyboard for stopping.", "키보드 중지 감시를 시작하지 못했습니다."));
             ready.TrySetResult();
             while (Native.GetMessage(out _, IntPtr.Zero, 0, 0) > 0) { }
         }

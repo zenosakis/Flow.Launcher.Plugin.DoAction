@@ -1,3 +1,4 @@
+using DoAction.Core;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -44,7 +45,7 @@ internal static class Native
         {
             // A partial submission must not leave a key/button held down.
             SendInput(1, new[] { up }, Marshal.SizeOf<Input>());
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "입력을 전달하지 못했습니다. 대상 앱의 권한을 확인해 주세요.");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), L.T("Unable to send input. Check the target application's permissions.", "입력을 전달하지 못했습니다. 대상 앱의 권한을 확인해 주세요."));
         }
     }
 
